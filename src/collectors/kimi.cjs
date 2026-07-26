@@ -38,19 +38,32 @@ function resetAt(item, detail) {
   return Number.isFinite(seconds) && seconds > 0 ? isoBeijing(Date.now() + seconds * 1000) : null;
 }
 
+// 两种凭据方式：优先 apiKeyEnv 环境变量（Coding Plan API Key，与 cc-switch 一致），
+// 未配置时回退到读取本地 Kimi Code 登录凭据（需显式开启开关）。
+function resolveToken(config) {
+  if (config.apiKeyEnv) {
+    const envName = String(config.apiKeyEnv);
+    const key = String(process.env[envName] || '').trim();
+    if (!key) throw new Error(`没有设置环境变量 ${envName}`);
+    return key;
+  }
+  if (config.experimental !== true || config.allowLocalCredentialRead !== true) {
+    throw new Error('必须配置 apiKeyEnv，或显式开启 experimental 和 allowLocalCredentialRead');
+  }
+  const credentialsPath = expandHome(config.credentialsFile || '~/.kimi-code/credentials/kimi-code.json');
+  const credentials = readJson(credentialsPath);
+  const token = String(credentials && credentials.access_token || '').trim();
+  if (!token) throw new Error('Kimi Code 登录凭据中没有 access_token');
+  return token;
+}
+
 async function collectKimi(config = {}) {
   const fetchedAt = isoBeijing();
   if (!config.enabled) {
     return { ...failedWindows('Kimi', '未启用', fetchedAt), disabled: true };
   }
-  if (config.experimental !== true || config.allowLocalCredentialRead !== true) {
-    return failedWindows('Kimi', '必须显式开启 experimental 和 allowLocalCredentialRead', fetchedAt);
-  }
   try {
-    const credentialsPath = expandHome(config.credentialsFile || '~/.kimi-code/credentials/kimi-code.json');
-    const credentials = readJson(credentialsPath);
-    const token = String(credentials && credentials.access_token || '').trim();
-    if (!token) throw new Error('Kimi Code 登录凭据中没有 access_token');
+    const token = resolveToken(config);
     const baseUrl = String(config.baseUrl || 'https://api.kimi.com/coding/v1').replace(/\/+$/, '');
     const payload = await fetchJson(`${baseUrl}/usages`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },

@@ -1,0 +1,20 @@
+# Kindle AI 额度中控台 · 服务器端静态托管
+#
+# 用法（服务器上）：
+#   mkdir -p /opt/kindle-dashboard/site
+#   把本文件放到 /opt/kindle-dashboard/docker-compose.yml
+#   docker compose up -d
+#
+# Mac 端通过 `npm run publish` 把 dist/ rsync 到 ./site 目录，
+# nginx 只读挂载该目录，推送后无需重启容器。
+# Kindle 访问 http://服务器IP:8787 即可。
+
+services:
+  kindle-dashboard:
+    image: nginx:alpine
+    container_name: kindle-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASH_PORT:-8787}:80"
+    volumes:
+      - ./site:/usr/share/nginx/html:ro

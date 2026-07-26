@@ -128,6 +128,8 @@
   function quota(cardId, source) {
     var card = el(cardId);
     if (!card) return;
+    var nameNode = card.querySelector('.q-name');
+    if (source && source.label) nodeText(nameNode, source.label);
     var rows = card.querySelectorAll('.q-row');
     var windows = source && source.ok && source.windows ? source.windows : [];
     var i, spans, bar, refresh;
@@ -179,16 +181,6 @@
     nodeHtml(detail, String(w.description || '天气') + ' · 体感 ' + Math.round(Number(w.feelsLikeC)) + '° · 湿度 ' + Math.round(Number(w.humidity)) + '%<br>风 ' + Math.round(Number(w.windKph)) + 'km/h · ' + String(w.place || '北京'));
   }
 
-  function deepseek(source) {
-    if (source && source.ok && typeof source.balance === 'number') {
-      txt('deepSeekBalance', '¥ ' + Number(source.balance).toFixed(2));
-      txt('deepSeekDetail', '实时余额 · 按量计费');
-    } else {
-      txt('deepSeekBalance', '¥ --');
-      txt('deepSeekDetail', '获取失败 · 等待下次采集');
-    }
-  }
-
   function renderQuote(q) {
     if (!q || !q.text) return;
     var qtNode = document.querySelector('.quote-text');
@@ -204,10 +196,10 @@
     if (data.updatedAt !== rendered) {
       rendered = data.updatedAt;
       weather(data.weather);
-      quota('cardClaude', data.sources.claude);
-      quota('cardCodex', data.sources.codex);
+      quota('cardGlm1', data.sources.glm1);
+      quota('cardGlm2', data.sources.glm2);
       quota('cardKimi', data.sources.kimi);
-      deepseek(data.sources.deepseek);
+      quota('cardMinimax', data.sources.minimax);
       renderQuote(data.quote);
       var rel = el('relTime');
       if (rel) nodeAttr(rel, 'data-ts', data.updatedAt);

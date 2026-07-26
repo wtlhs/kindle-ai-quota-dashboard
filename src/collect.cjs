@@ -2,10 +2,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { collectClaude } = require('./collectors/claude.cjs');
-const { collectCodex } = require('./collectors/codex.cjs');
-const { collectDeepSeek } = require('./collectors/deepseek.cjs');
+const { collectGlm } = require('./collectors/glm.cjs');
 const { collectKimi } = require('./collectors/kimi.cjs');
+const { collectMiniMax } = require('./collectors/minimax.cjs');
 const { ROOT, loadConfig } = require('./lib/config.cjs');
 const {
   isoBeijing,
@@ -14,7 +13,7 @@ const {
   writeAtomic,
 } = require('./lib/common.cjs');
 
-const SOURCE_NAMES = ['claude', 'codex', 'kimi', 'deepseek'];
+const SOURCE_NAMES = ['glm1', 'glm2', 'kimi', 'minimax'];
 
 function readQuote(filePath) {
   if (!filePath) return null;
@@ -106,20 +105,23 @@ function demoSnapshot() {
       source: '开源演示',
     },
     sources: {
-      claude: {
+      glm1: {
         ok: true,
-        label: 'Claude',
+        label: 'GLM-1',
         windows: [
           { name: '5小时', usedPct: 23, resetAt: afterHours(3) },
-          { name: '7天', usedPct: 42, resetAt: afterHours(96) },
+          { name: '周', usedPct: 42, resetAt: afterHours(96) },
         ],
         fetchedAt: now,
         error: null,
       },
-      codex: {
+      glm2: {
         ok: true,
-        label: 'Codex',
-        windows: [{ name: '周', usedPct: 18, resetAt: afterHours(120) }],
+        label: 'GLM-2',
+        windows: [
+          { name: '5小时', usedPct: 8, resetAt: afterHours(2) },
+          { name: '周', usedPct: 67, resetAt: afterHours(48) },
+        ],
         fetchedAt: now,
         error: null,
       },
@@ -133,12 +135,13 @@ function demoSnapshot() {
         fetchedAt: now,
         error: null,
       },
-      deepseek: {
+      minimax: {
         ok: true,
-        label: 'DeepSeek',
-        balance: 12.34,
-        currency: 'CNY',
-        detail: '余额 ¥12.34',
+        label: 'MiniMax',
+        windows: [
+          { name: '5小时', usedPct: 12, resetAt: afterHours(1) },
+          { name: '周', usedPct: 30, resetAt: afterHours(120) },
+        ],
         fetchedAt: now,
         error: null,
       },
@@ -148,17 +151,17 @@ function demoSnapshot() {
 
 async function realSnapshot(config) {
   const providers = config.providers || {};
-  const [claude, codex, kimi, deepseek] = await Promise.all([
-    collectClaude(providers.claude),
-    collectCodex(providers.codex),
+  const [glm1, glm2, kimi, minimax] = await Promise.all([
+    collectGlm(providers.glm1, 'GLM-1'),
+    collectGlm(providers.glm2, 'GLM-2'),
     collectKimi(providers.kimi),
-    collectDeepSeek(providers.deepseek),
+    collectMiniMax(providers.minimax),
   ]);
   return {
     updatedAt: isoBeijing(),
     weather: readWeather(config.weatherFile),
     quote: readQuote(config.quoteFile),
-    sources: { claude, codex, kimi, deepseek },
+    sources: { glm1, glm2, kimi, minimax },
   };
 }
 
@@ -198,11 +201,7 @@ function validateSnapshot(snapshot) {
     if (!source || typeof source.ok !== 'boolean' || typeof source.label !== 'string') {
       throw new Error(`${name} 字段不完整`);
     }
-    if (name === 'deepseek') {
-      if (!Object.prototype.hasOwnProperty.call(source, 'balance')) {
-        throw new Error('deepseek 缺少 balance');
-      }
-    } else if (!Array.isArray(source.windows)) {
+    if (!Array.isArray(source.windows)) {
       throw new Error(`${name} 缺少 windows`);
     }
   }

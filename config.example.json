@@ -4,27 +4,27 @@
   "quoteFile": "config/quote.json",
   "weatherFile": "",
   "providers": {
-    "deepseek": {
+    "glm1": {
       "enabled": false,
-      "apiKeyEnv": "DEEPSEEK_API_KEY"
+      "label": "GLM-1",
+      "apiKeyEnv": "GLM1_API_KEY",
+      "baseUrl": "https://open.bigmodel.cn"
     },
-    "claude": {
+    "glm2": {
       "enabled": false,
-      "experimental": true,
-      "allowLocalCredentialRead": false,
-      "credentialsFile": "~/.claude/.credentials.json"
-    },
-    "codex": {
-      "enabled": false,
-      "experimental": true,
-      "executableEnv": "CODEX_CLI_PATH"
+      "label": "GLM-2",
+      "apiKeyEnv": "GLM2_API_KEY",
+      "baseUrl": "https://open.bigmodel.cn"
     },
     "kimi": {
       "enabled": false,
-      "experimental": true,
-      "allowLocalCredentialRead": false,
-      "credentialsFile": "~/.kimi-code/credentials/kimi-code.json",
+      "apiKeyEnv": "KIMI_API_KEY",
       "baseUrl": "https://api.kimi.com/coding/v1"
+    },
+    "minimax": {
+      "enabled": false,
+      "apiKeyEnv": "MINIMAX_API_KEY",
+      "baseUrl": "https://api.minimaxi.com"
     }
   }
 }
